@@ -1653,7 +1653,7 @@ int IOStream::readFieldData(
    // get the relevant size information
    int DecompID;
    int LocSize;
-   int NDimsTmp = std::min(NDims, 1);
+   int NDimsTmp = std::max(NDims, 1);
    std::vector<int> DimLengths(NDimsTmp);
    if (IsDistributed) {
       Err = computeDecomp(FieldPtr, DecompID, LocSize, DimLengths);
@@ -2654,6 +2654,7 @@ int IOStream::writeStream(
       if (ThisField->isTimeDependent()) {
          ++NDims;
          DimNames.insert(DimNames.begin(), "time");
+         FieldDims.resize(NDims);
       }
       // Get the dim IDs
       for (int IDim = 0; IDim < NDims; ++IDim) {

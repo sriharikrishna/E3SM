@@ -30,6 +30,7 @@
 #include <iostream>
  
 using namespace medi;
+using MpiTypes = codi::CoDiMpiTypes<codi::RealReverse>;
 
 #endif
 
@@ -132,6 +133,36 @@ template <class T>
 inline constexpr bool isKokkosArray = Kokkos::is_view<T>::value;
 
 } // end namespace OMEGA
+
+#ifdef USE_CODIPACK
+// This specialization is needed to support Kokkos reductions on CoDiPACK types.
+template<>
+struct Kokkos::reduction_identity<decltype(OMEGA::Real(1))> {
+  static KOKKOS_INLINE_FUNCTION auto max() {
+    return Kokkos::reduction_identity<OMEGA::PassiveReal>::max();
+  }
+};
+
+namespace Kokkos {
+  KOKKOS_INLINE_FUNCTION bool isfinite(const OMEGA::Real & x)
+  {
+    return codi::isfinite(x);
+  }
+#define KOKKOS_CODI_MATH(fun)                                    \
+  KOKKOS_INLINE_FUNCTION OMEGA::Real fun (const OMEGA::Real & x) \
+  {                                                              \
+    return codi::fun (x);                                        \
+  }
+  KOKKOS_CODI_MATH(sqrt);
+  KOKKOS_CODI_MATH(abs);
+  KOKKOS_CODI_MATH(sin);
+  KOKKOS_CODI_MATH(cos);
+  KOKKOS_CODI_MATH(tan);
+  KOKKOS_CODI_MATH(tanh);
+  KOKKOS_CODI_MATH(exp);
+#undef KOKKOS_CODI_MATH
+}
+#endif
 
 //===----------------------------------------------------------------------===//
 #endif
